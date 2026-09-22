@@ -16,7 +16,7 @@ export function useCoordinator(): AppCoordinator {
 
   return useMemo<AppCoordinator>(
     () => ({
-      showPatients: () => navigation.navigate('tabs'),
+      showPatients: () => navigation.navigate('tabs', { screen: 'patients' }),
       showPatientDetail: (patientId) => navigation.navigate('patient-detail', { patientId }),
       showBiomarkers: (patientId) => navigation.navigate('biomarkers', { patientId }),
       showInsight: (patientId) => navigation.navigate('insight', { patientId }),

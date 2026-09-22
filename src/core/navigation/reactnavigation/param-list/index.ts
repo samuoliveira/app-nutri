@@ -1,8 +1,10 @@
+import type { NavigatorScreenParams } from '@react-navigation/native';
+
 import type { AppRoute } from '@/core/navigation/app-route';
 
 /** Tradução do destino de domínio para a lista de parâmetros da biblioteca. */
 export type RootStackParamList = {
-  tabs: undefined;
+  tabs: NavigatorScreenParams<TabParamList> | undefined;
   'patient-detail': { patientId: string };
   biomarkers: { patientId: string };
   insight: { patientId: string };

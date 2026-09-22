@@ -21,9 +21,18 @@ export function rowToPatient(row: PatientRow): Patient {
 
 /** Carteira salva no aparelho: é o que a tela mostra quando a rede falha. */
 export class PatientLocalSource {
+  /** Fila de gravação: withTransactionAsync não é exclusivo, e dois saves juntos abririam BEGIN dentro de BEGIN. */
+  private pendingWrite: Promise<void> = Promise.resolve();
+
   constructor(private readonly database: Database) {}
 
-  async save(patients: ReadonlyArray<Patient>): Promise<void> {
+  save(patients: ReadonlyArray<Patient>): Promise<void> {
+    const write = this.pendingWrite.then(() => this.write(patients));
+    this.pendingWrite = write.catch(() => undefined);
+    return write;
+  }
+
+  private async write(patients: ReadonlyArray<Patient>): Promise<void> {
     const cachedAt = new Date().toISOString();
     await this.database.withTransactionAsync(async () => {
       for (const patient of patients) {

@@ -13,7 +13,6 @@ export function HomeScreen() {
   const coordinator = useCoordinator();
   const model = useHomeModel();
   const setPatientFilter = useSessionStore((state) => state.setPatientFilter);
-  const setLastPatientId = useSessionStore((state) => state.setLastPatientId);
 
   if (model.ui.kind === 'loading') {
     return (
@@ -86,10 +85,7 @@ export function HomeScreen() {
                 <Text
                   token="body"
                   weight="500"
-                  onPress={() => {
-                    setLastPatientId(item.appointment.patientId);
-                    coordinator.showPatientDetail(item.appointment.patientId);
-                  }}
+                  onPress={() => coordinator.showPatientDetail(item.appointment.patientId)}
                 >
                   {item.appointment.patientName}
                 </Text>

@@ -31,7 +31,6 @@ const FILTERS: ReadonlyArray<Segment<PatientStatusFilter>> = [
   { value: 'all', label: 'Todos' },
   { value: 'em_dia', label: 'Em dia' },
   { value: 'atencao', label: 'Atenção' },
-  { value: 'novo', label: 'Novos' },
 ];
 
 export function PatientsScreen() {
@@ -43,7 +42,6 @@ export function PatientsScreen() {
   const search = useSessionStore((state) => state.patientSearch);
   const setPatientFilter = useSessionStore((state) => state.setPatientFilter);
   const setPatientSearch = useSessionStore((state) => state.setPatientSearch);
-  const setLastPatientId = useSessionStore((state) => state.setLastPatientId);
 
   const [state, viewModel] = useViewModel(
     () => new PatientsViewModel(container.patients, queryClient, { filter, search }),
@@ -59,11 +57,8 @@ export function PatientsScreen() {
   }, [filter, viewModel]);
 
   const openPatient = useCallback(
-    (patient: Patient) => {
-      setLastPatientId(patient.id);
-      coordinator.showPatientDetail(patient.id);
-    },
-    [coordinator, setLastPatientId],
+    (patient: Patient) => coordinator.showPatientDetail(patient.id),
+    [coordinator],
   );
 
   const pinPatient = useCallback(

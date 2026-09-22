@@ -1,9 +1,7 @@
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer, type Theme as NavigationTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { useTheme } from '@/core/designsystem/ThemeProvider';
-import { useFlags } from '@/core/flags/use-flag';
 import { BiomarkersScreen } from '@/feature/biomarkers';
 import { HomeScreen } from '@/feature/home';
 import { InsightSheet } from '@/feature/insight';
@@ -12,23 +10,21 @@ import { PatientsScreen } from '@/feature/patients';
 import { ScheduleScreen } from '@/feature/schedule';
 import { SettingsScreen } from '@/feature/settings';
 import { screenHeaderOptions } from '../screen-options';
-import { TabBar } from '../TabBar';
-import type { RootStackParamList, TabParamList } from '../param-list';
+import { Tabs, type TabScreens } from '../Tabs';
+import type { RootStackParamList } from '../param-list';
 
-const Tab = createBottomTabNavigator<TabParamList>();
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-function Tabs() {
-  const flags = useFlags();
+/** Raiz de composição: é aqui que a tela de cada aba é escolhida. */
+const TAB_SCREENS: TabScreens = {
+  home: HomeScreen,
+  patients: PatientsScreen,
+  schedule: ScheduleScreen,
+  settings: SettingsScreen,
+};
 
-  return (
-    <Tab.Navigator screenOptions={{ headerShown: false }} tabBar={(props) => <TabBar {...props} />}>
-      <Tab.Screen name="home" component={HomeScreen} />
-      <Tab.Screen name="patients" component={PatientsScreen} />
-      {flags.agenda_tab ? <Tab.Screen name="schedule" component={ScheduleScreen} /> : null}
-      <Tab.Screen name="settings" component={SettingsScreen} />
-    </Tab.Navigator>
-  );
+function TabsRoute() {
+  return <Tabs screens={TAB_SCREENS} />;
 }
 
 /** Pilha nativa por cima das abas: detalhe, histórico e o sheet do assistente. */
@@ -56,7 +52,7 @@ export function RootNavigator() {
   return (
     <NavigationContainer theme={navigationTheme}>
       <Stack.Navigator>
-        <Stack.Screen name="tabs" component={Tabs} options={{ headerShown: false }} />
+        <Stack.Screen name="tabs" component={TabsRoute} options={{ headerShown: false }} />
         <Stack.Screen
           name="patient-detail"
           options={{ headerShown: false }}

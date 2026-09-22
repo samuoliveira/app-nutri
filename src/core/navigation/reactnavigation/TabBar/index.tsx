@@ -5,10 +5,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/core/designsystem/ThemeProvider';
 import { GlassSurface, Icon, Text } from '@/core/designsystem/native';
 import { tabs } from '@/core/navigation/tabs';
-import { QuickActions } from '../QuickActions';
 import type { TabBarProps } from './types';
 
-/** Barra flutuante de vidro + botão de ações rápidas, como no desenho. */
+/** Barra flutuante de vidro desenhada em JS (Android). */
 export function TabBar({ state, navigation }: TabBarProps) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
@@ -56,7 +55,6 @@ export function TabBar({ state, navigation }: TabBarProps) {
           );
         })}
       </GlassSurface>
-      <QuickActions />
     </View>
   );
 }
