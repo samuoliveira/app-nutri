@@ -307,3 +307,71 @@ centralizada. Além dele, testes de regra: `clinical-bands`,
 Caso legítimo que o checker reprova se justifica com o escape na linha acima
 (`// style-ok:`, `// cor-ok:`, `// any-ok:`, `// useEffect-ok:`, …) e um motivo
 real. Mudou o padrão? Muda em `tools/rules.mjs` — não em prosa.
+
+---
+
+## 14. Backend e integração
+
+O backend vive em [`backend/`](../backend/README.md): NestJS + PostgreSQL em
+três camadas — Controller (valida), Service (regra + LLM), Repository (banco).
+`docker compose up` sobe API na porta 9000 e o Postgres.
+
+### Como o app escolhe a fonte
+
+```
+EXPO_PUBLIC_API_URL definida  →  core/network/api  →  backend NestJS
+EXPO_PUBLIC_API_URL vazia     →  core/network/fixtures  →  catálogo simulado
+```
+
+A decisão mora em `core/network/api-config` e é lida só por
+`PatientRemoteSource`. Nenhuma camada acima muda: repositório, use case,
+ViewModel e tela não sabem qual fonte respondeu — o mesmo binário roda nos dois
+modos, o que mantém o app demonstrável sem subir nada.
+
+### Peças novas em `core/network`
+
+| pasta | papel |
+|---|---|
+| `api-config/` | base URL (do ambiente, nunca literal) e timeout |
+| `http-client/` | único `fetch` do app; traduz status e falha em `DomainError` |
+| `api/` | camada tipada: DTO do backend → modelo de domínio |
+| `flag-sync/` | kill switch da tela Mais: escreve no servidor ou no catálogo |
+
+Tradução de erro que o `http-client` garante — é o que permite as telas
+tratarem estado sem conhecer HTTP:
+
+| HTTP | `DomainError` | efeito na tela |
+|---|---|---|
+| 404 | `not-found` | estado vazio / voltar |
+| 400 · 422 | `invalid-input` | erro sem retry |
+| 503 | `feature-disabled` | IA indisponível (kill switch) |
+| outros | `network` | erro com retry |
+| `AbortError` | `timeout` | erro com retry |
+| `TypeError` | `offline` | modo offline, cache local assume |
+
+Vocabulário também é traduzido na fronteira: `weight|glucose|pressure` do
+backend viram `peso|glicemia|pressao` do domínio. `core/network/api/index.test.ts`
+trava esse mapeamento e a tabela de erros acima.
+
+### IA ponta a ponta
+
+```
+InsightSheet → InsightViewModel → RequestInsight (flag local)
+  → InsightRepositoryImpl → POST /api/patients/:id/insights
+      backend: flag ai_insights? → anonimiza → LLM → persiste
+```
+
+A anonimização acontece **no backend**, antes do provedor, e o app nunca carrega
+chave. Com `ai_insights` desligada o backend responde `503` e o app mostra IA
+indisponível sem chamar o provedor — kill switch nas duas pontas.
+
+### Agenda
+
+`GET /api/schedule/today?date=<iso>` devolve as consultas do dia já ordenadas e
+com o nome do paciente. A janela do dia é regra pura (`schedule/day-window.ts`),
+fora do service — é o que impede consulta sumir por fuso horário. Marcar usa
+`POST /api/schedule`, que responde `404` para paciente inexistente e `409` para
+horário ocupado.
+
+O app manda o dia que está exibindo (`nowISO`), e `core/network/api` traduz
+`first|return|consultation` para `primeira|retorno|consulta` do domínio.

@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: nutri
+      POSTGRES_PASSWORD: nutri
+      POSTGRES_DB: nutri
+    ports:
+      - '5432:5432'
+    volumes:
+      - nutri-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U nutri']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: .
+    ports:
+      - '9000:9000'
+    environment:
+      PORT: 9000
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      DATABASE_USER: nutri
+      DATABASE_PASSWORD: nutri
+      DATABASE_NAME: nutri
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-5}
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  nutri-db:

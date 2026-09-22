@@ -6,7 +6,7 @@ import { brandIds, brandById } from '@/core/designsystem/brands';
 import { Divider, Screen, SegmentedControl, Text, type Segment } from '@/core/designsystem/native';
 import { spacing } from '@/core/designsystem/tokens';
 import { useFlags } from '@/core/flags/use-flag';
-import { writeServerFlag } from '@/core/network/fixtures/flag-config';
+import { publishFlag } from '@/core/network/flag-sync';
 import { getNetworkConfig, setNetworkConfig } from '@/core/network/network-config';
 import { queryKeys } from '@/core/query/query-keys';
 import { useOta } from '@/core/platform/ota';
@@ -30,8 +30,9 @@ export function SettingsScreen() {
   const [offline, setOffline] = useState(getNetworkConfig().forcedOffline);
 
   const flipFlag = (key: 'ai_insights' | 'agenda_tab' | 'biometric_lock', value: boolean) => {
-    writeServerFlag(key, value);
-    void queryClient.invalidateQueries({ queryKey: queryKeys.flags.snapshot() });
+    void publishFlag(key, value).finally(() => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.flags.snapshot() });
+    });
   };
 
   return (
