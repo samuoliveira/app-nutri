@@ -1,25 +1,55 @@
 {
   "expo": {
-    "name": "tecsa-nutri",
+    "name": "Tecsa Nutrition",
     "slug": "tecsa-nutri",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
+    "scheme": "tecsanutri",
     "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 3000
+    },
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F7F6F2"
+    },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "com.tecsa.nutri",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Usamos Face ID para proteger os dados clínicos dos pacientes."
+      }
     },
     "android": {
+      "package": "com.tecsa.nutri",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
-      },
-      "predictiveBackGestureEnabled": false
+        "monochromeImage": "./assets/android-icon-monochrome.png",
+        "backgroundColor": "#F7F6F2"
+      }
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
+    "plugins": [
+      "expo-sqlite",
+      "expo-font",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Usamos Face ID para proteger os dados clínicos dos pacientes."
+        }
+      ],
+      "expo-asset"
+    ],
+    "experiments": {
+      "typedRoutes": false
     }
   }
 }
