@@ -1,4 +1,4 @@
-import { Column, Entity, Index, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 import { Patient } from './patient.entity';
 
@@ -14,6 +14,7 @@ export class Measurement {
   patientId!: string;
 
   @ManyToOne(() => Patient, (patient) => patient.measurements, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'patient_id' })
   patient!: Patient;
 
   @Column({ type: 'varchar' })

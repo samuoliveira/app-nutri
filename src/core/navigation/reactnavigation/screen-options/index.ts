@@ -1,7 +1,7 @@
 import type { NativeStackNavigationOptions } from '@react-navigation/native-stack';
 
 import type { Theme } from '@/core/designsystem/theme';
-import type { ScreenHeaderSpec } from '@/core/navigation/use-screen-header';
+import type { ScreenHeaderSpec } from '@/core/navigation/use-screen-header/types';
 
 /**
  * Única tradução de header de domínio para opções da biblioteca.

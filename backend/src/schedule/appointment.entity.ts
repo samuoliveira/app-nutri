@@ -1,4 +1,4 @@
-import { Column, Entity, Index, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
 
 import { Patient } from '../patients/patient.entity';
 
@@ -14,6 +14,7 @@ export class Appointment {
   patientId!: string;
 
   @ManyToOne(() => Patient, { onDelete: 'CASCADE', eager: true })
+  @JoinColumn({ name: 'patient_id' })
   patient!: Patient;
 
   @Column({ name: 'starts_at', type: 'timestamptz' })

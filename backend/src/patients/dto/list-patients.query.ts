@@ -1,4 +1,4 @@
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { IsIn, IsInt, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export const STATUS_FILTERS = ['all', 'novo', 'atencao', 'em_dia'] as const;
@@ -16,12 +16,14 @@ export class ListPatientsQuery {
   search = '';
 
   @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(1)
   @Max(100)
   limit = 40;
 
   @IsOptional()
+  @Type(() => Number)
   @IsInt()
   @Min(0)
   offset = 0;

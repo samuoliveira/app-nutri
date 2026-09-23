@@ -22,6 +22,17 @@ function importsOf(file: string): string[] {
 
 const FILES = sourceFiles(SRC);
 
+/**
+ * As duas raízes de composição: quem injeta dependência e quem monta as rotas.
+ * Só elas enxergam implementação de feature — e pelo caminho direto, senão o
+ * barrel da feature (que exporta tela) fecha um ciclo com o container.
+ */
+const COMPOSITION_ROOTS = ['core/di/', 'core/navigation/reactnavigation/RootNavigator/'];
+
+function isCompositionRoot(file: string): boolean {
+  return COMPOSITION_ROOTS.some((root) => relative(SRC, file).startsWith(root));
+}
+
 describe('domínio isolado', () => {
   const FORBIDDEN = [
     'react',
@@ -68,6 +79,7 @@ describe('feature só pela porta pública', () => {
     const offenders: string[] = [];
 
     for (const file of FILES) {
+      if (isCompositionRoot(file)) continue;
       const owner = relative(SRC, file).split('/')[1];
       for (const specifier of importsOf(file)) {
         const match = /^@\/feature\/([^/]+)\/(.+)$/.exec(specifier);
@@ -84,12 +96,9 @@ describe('feature só pela porta pública', () => {
 });
 
 describe('core não depende de feature', () => {
-  /** As duas raízes de composição: quem injeta dependência e quem monta as rotas. */
-  const COMPOSITION_ROOTS = ['core/di/', 'core/navigation/reactnavigation/RootNavigator/'];
-
   it('só as raízes de composição conhecem as implementações das features', () => {
     const offenders = FILES.filter((file) => relative(SRC, file).startsWith('core/'))
-      .filter((file) => !COMPOSITION_ROOTS.some((root) => relative(SRC, file).startsWith(root)))
+      .filter((file) => !isCompositionRoot(file))
       .flatMap((file) =>
         importsOf(file)
           .filter((specifier) => specifier.startsWith('@/feature/'))

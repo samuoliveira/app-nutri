@@ -39,3 +39,9 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# env local (contém a URL do backend)
+.env
+
+# saída de cobertura
+coverage/
