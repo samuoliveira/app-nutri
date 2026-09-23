@@ -126,9 +126,22 @@ funções sem dependência — testável sem banco.
 
 A chave do LLM **só existe no servidor**. O service checa a flag `ai_insights`
 (kill switch: responde `503` sem tocar no provedor), anonimiza o perfil e chama
-a porta `LlmClient`. Com `ANTHROPIC_API_KEY` injeta `AnthropicLlm`; sem chave,
-`RuleBasedLlm` determinístico. A API funciona nos dois modos — e se o provedor
-falhar, cai no fallback em vez de derrubar a requisição.
+a porta `LlmClient`. O provedor é escolhido no boot:
+
+```
+ANTHROPIC_API_KEY  → AnthropicLlm
+GEMINI_API_KEY     → GeminiLlm      (free tier do Google AI Studio)
+nenhuma            → RuleBasedLlm   (faixas clínicas, determinístico)
+```
+
+Qualquer provedor que falhe cai no gerador por regras, então a API responde nos
+três casos. O campo `source` (`llm` | `rules`) diz de onde veio o rascunho, e a
+tela mostra isso. Decisão e alternativas descartadas em
+[`docs/adr/0001-selecao-de-provedor-llm.md`](docs/adr/0001-selecao-de-provedor-llm.md).
+
+Para exercitar IA de verdade sem custo: pegue uma chave em
+[aistudio.google.com/apikey](https://aistudio.google.com/apikey) e coloque em
+`GEMINI_API_KEY` no `backend/.env`.
 
 ---
 
@@ -140,7 +153,7 @@ npm run check:arch                   # fronteiras entre camadas
 npm run check:code --all             # padrão de código
 npm run check:keys                   # chaves de query registradas
 
-cd backend && npm test && npm run test:cov   # 35 testes, 94,8% dos services
+cd backend && npm test && npm run test:cov   # 40 testes, 94,8% dos services
 ```
 
 O teste de arquitetura lê o código-fonte e falha quando uma fronteira é

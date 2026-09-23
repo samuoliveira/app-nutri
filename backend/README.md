@@ -61,15 +61,16 @@ flag ai_insights → anonymizePatient() → LlmClient → persistência
   responder `503` sem tocar no provedor. O app faz polling de 1 min.
 - **Anonimização**: `insights/llm/anonymous-profile.ts` é o único caminho de
   saída de dado de paciente. Nome e id nunca saem — teste cobre isso.
-- **Porta `LlmClient`** (DIP): o service depende da interface. Com
-  `ANTHROPIC_API_KEY` configurada o módulo injeta `AnthropicLlm`; sem chave (ou
-  se o provedor falhar) injeta `RuleBasedLlm`, determinístico. A API funciona
-  nos dois modos.
+- **Porta `LlmClient`** (DIP): o service depende da interface. O módulo escolhe
+  no boot — `AnthropicLlm` se houver `ANTHROPIC_API_KEY`, `GeminiLlm` se houver
+  `GEMINI_API_KEY` (free tier do Google AI Studio), `RuleBasedLlm` se não houver
+  nenhuma. Provedor que falha cai no gerador por regras, então a API responde
+  nos três casos.
 
 ## Testes
 
 ```bash
-npm test          # 20 testes
+npm test          # 40 testes
 npm run test:cov
 ```
 
