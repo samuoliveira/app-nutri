@@ -57,8 +57,9 @@ PatientListRow (onLongPress)
   → PatientsViewModel.togglePinned      pinta o estado otimista na hora
   → TogglePin (use case)                diz o que fixar significa
   → PatientRepository.setPinned         SQLite primeiro, servidor depois
-      falhou?  enfileira em pending_mutation e mantém o otimista
-      recusou? o ViewModel devolve o estado anterior
+      sem rede? enfileira em pending_mutation e mantém o otimista
+      recusou?  desfaz o SQLite e o ViewModel devolve o estado anterior
+  → usePendingSync                      reenvia a fila ao abrir, reconectar e voltar ao app
   → invalida queryKeys.patients.counts  o Início recalcula sozinho
 ```
 

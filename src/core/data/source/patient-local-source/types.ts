@@ -11,3 +11,8 @@ export interface PatientRow {
   status: string;
 }
 
+export interface PendingMutation {
+  readonly id: number;
+  readonly kind: string;
+  readonly payload: unknown;
+}

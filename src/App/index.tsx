@@ -13,6 +13,7 @@ import { openDatabase } from '@/core/database/database';
 import { useFlag } from '@/core/flags/use-flag';
 import { BiometricGate } from '@/core/platform/biometric-gate';
 import { useConnectivity } from '@/core/platform/use-connectivity';
+import { usePendingSync } from '@/core/platform/use-pending-sync';
 import { RootNavigator } from '@/core/navigation/reactnavigation/RootNavigator';
 import { createQueryClient, createQueryPersister, OFFLINE_CACHE_MAX_AGE_MS } from '@/core/query/query-client';
 import { useBrandStore } from '@/core/state/brand-store';
@@ -65,6 +66,7 @@ export function App() {
 function AppShell() {
   const biometricLock = useFlag('biometric_lock');
   useConnectivity();
+  usePendingSync();
 
   return (
     <BiometricGate enabled={biometricLock}>

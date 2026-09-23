@@ -103,8 +103,12 @@ aparelho — nunca deixa o app inacessível.
 ### Offline e update otimista
 
 Carteira em SQLite + cache do Query persistido por 7 dias. Fixar paciente
-escreve no banco local na hora; se o servidor recusar, o ViewModel devolve o
-snapshot anterior; se a rede cair, a mutação vai para `pending_mutation`.
+escreve no banco local na hora; se o servidor recusar (4xx), o banco local e o
+ViewModel voltam ao estado anterior; se a rede cair (offline, timeout, 5xx), a
+mutação vai para `pending_mutation`. A fila é reenviada em ordem ao abrir o
+app, ao reconectar e ao voltar do background (`usePendingSync`); recusa no
+reenvio desfaz o local e sai da fila. Conflito é "vence a última escrita" —
+sem versão por registro, escolha consciente para o MVP.
 IA exige conexão e **não** enfileira — rascunho clínico velho é pior que ausente.
 
 ### Backend em camadas

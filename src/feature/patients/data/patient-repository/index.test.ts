@@ -21,7 +21,8 @@ function patient(overrides: Partial<Patient> = {}): Patient {
 }
 
 class FakeLocal {
-  readonly queue: Array<{ kind: string; payload: unknown }> = [];
+  queue: Array<{ id: number; kind: string; payload: unknown }> = [];
+  private nextId = 1;
   private readonly rows = new Map<string, Patient>();
 
   constructor(patients: ReadonlyArray<Patient>) {
@@ -40,23 +41,33 @@ class FakeLocal {
     if (row) this.rows.set(id, { ...row, pinned });
   }
   async enqueue(kind: string, payload: unknown): Promise<void> {
-    this.queue.push({ kind, payload });
+    this.queue.push({ id: this.nextId++, kind, payload });
+  }
+  async pending() {
+    return [...this.queue];
+  }
+  async removePending(id: number): Promise<void> {
+    this.queue = this.queue.filter((item) => item.id !== id);
   }
 }
 
-function build(patients: ReadonlyArray<Patient>, pinError?: DomainError) {
+/** Servidor falso: cada chamada de setPinned consome o próximo erro da lista (undefined = sucesso). */
+function build(patients: ReadonlyArray<Patient>, ...pinErrors: Array<DomainError | undefined>) {
   const local = new FakeLocal(patients);
   const remote = {
+    calls: [] as Array<{ id: string; pinned: boolean }>,
     listAll: async () => patients,
-    setPinned: async () => {
-      if (pinError) throw pinError;
+    setPinned: async (id: string, pinned: boolean) => {
+      const error = pinErrors.shift();
+      if (error) throw error;
+      remote.calls.push({ id, pinned });
     },
   };
   const repository = new PatientRepositoryImpl(
     remote as unknown as PatientRemoteSource,
     local as unknown as PatientLocalSource,
   );
-  return { repository, local };
+  return { repository, local, remote };
 }
 
 describe('PatientRepositoryImpl', () => {
@@ -87,7 +98,7 @@ describe('PatientRepositoryImpl', () => {
     const result = await repository.setPinned('p-1', true);
 
     expect(result.ok && result.value.pinned).toBe(true);
-    expect(local.queue).toEqual([{ kind: 'set-pinned', payload: { id: 'p-1', pinned: true } }]);
+    expect(local.queue).toEqual([{ id: 1, kind: 'set-pinned', payload: { id: 'p-1', pinned: true } }]);
   });
 
   it('servidor recusou: desfaz a mudança local, não enfileira e devolve o erro', async () => {
@@ -99,5 +110,65 @@ describe('PatientRepositoryImpl', () => {
     expect(!result.ok && result.error.code).toBe('not-found');
     expect((await local.byId('p-1'))?.pinned).toBe(false);
     expect(local.queue).toEqual([]);
+  });
+
+  describe('fila offline', () => {
+    it('reenvia na ordem, confirma e esvazia a fila', async () => {
+      const { repository, local, remote } = build([patient()], DomainError.offline());
+      await repository.setPinned('p-1', true);
+
+      const result = await repository.syncPending();
+
+      expect(result.ok && result.value).toEqual({ sent: 1, dropped: 0, remaining: 0 });
+      expect(remote.calls).toEqual([{ id: 'p-1', pinned: true }]);
+      expect(local.queue).toEqual([]);
+    });
+
+    it('rede caiu de novo: para a rodada e mantém a fila intacta', async () => {
+      const { repository, local } = build([patient()], DomainError.offline(), DomainError.timeout());
+      await repository.setPinned('p-1', true);
+
+      const result = await repository.syncPending();
+
+      expect(result.ok && result.value).toEqual({ sent: 0, dropped: 0, remaining: 1 });
+      expect(local.queue).toHaveLength(1);
+    });
+
+    it('servidor recusou no reenvio: desfaz o local e tira da fila', async () => {
+      const { repository, local } = build([patient()], DomainError.offline(), DomainError.notFound('Paciente'));
+      await repository.setPinned('p-1', true);
+
+      const result = await repository.syncPending();
+
+      expect(result.ok && result.value).toEqual({ sent: 0, dropped: 1, remaining: 0 });
+      expect((await local.byId('p-1'))?.pinned).toBe(false);
+      expect(local.queue).toEqual([]);
+    });
+
+    it('toque novo online espera a fila antiga chegar antes, para não ser sobrescrito', async () => {
+      const { repository, remote } = build([patient()], DomainError.offline());
+      await repository.setPinned('p-1', true);
+
+      await repository.setPinned('p-1', false);
+
+      expect(remote.calls).toEqual([
+        { id: 'p-1', pinned: true },
+        { id: 'p-1', pinned: false },
+      ]);
+    });
+
+    it('toque novo com fila travada entra atrás dela, sem ir ao servidor', async () => {
+      const { repository, local, remote } = build([patient()], DomainError.offline(), DomainError.offline());
+      await repository.setPinned('p-1', true);
+
+      const result = await repository.setPinned('p-1', false);
+
+      expect(result.ok && result.value.pinned).toBe(false);
+      expect(remote.calls).toEqual([]);
+      expect(local.queue.map((item) => item.payload)).toEqual([
+        { id: 'p-1', pinned: true },
+        { id: 'p-1', pinned: false },
+      ]);
+    });
   });
 });

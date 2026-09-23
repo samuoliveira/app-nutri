@@ -2,7 +2,7 @@ import { QueryClient } from '@tanstack/react-query';
 
 import { DomainError } from '@/core/domain/domain-error';
 import type { Patient } from '@/core/domain/model';
-import type { PatientPage, PatientQuery, PatientRepository } from '@/core/domain/repository';
+import type { PatientPage, PatientQuery, PatientRepository, SyncReport } from '@/core/domain/repository';
 import { fail, ok, type Result } from '@/core/domain/result';
 import { PatientsViewModel, SEARCH_DEBOUNCE_MS } from './index';
 
@@ -44,6 +44,10 @@ class FakePatientRepository implements PatientRepository {
 
   async countByStatus(): Promise<Result<Record<'em_dia' | 'atencao' | 'novo', number>>> {
     return ok({ em_dia: this.items.length, atencao: 0, novo: 0 });
+  }
+
+  async syncPending(): Promise<Result<SyncReport>> {
+    return ok({ sent: 0, dropped: 0, remaining: 0 });
   }
 }
 

@@ -1,9 +1,9 @@
 import type { Database } from '@/core/database/database';
 import type { Patient, PatientStatus, Sex } from '@/core/domain/model';
 
-import type { PatientRow } from './types';
+import type { PatientRow, PendingMutation } from './types';
 
-export type { PatientRow } from './types';
+export type { PatientRow, PendingMutation } from './types';
 
 export function rowToPatient(row: PatientRow): Patient {
   return {
@@ -87,6 +87,18 @@ export class PatientLocalSource {
       'INSERT INTO pending_mutation (kind, payload, created_at) VALUES (?, ?, ?)',
       [kind, JSON.stringify(payload), new Date().toISOString()],
     );
+  }
+
+  /** Mais antiga primeiro: a ordem de reenvio é a ordem em que o usuário agiu. */
+  async pending(): Promise<ReadonlyArray<PendingMutation>> {
+    const rows = await this.database.getAllAsync<{ id: number; kind: string; payload: string }>(
+      'SELECT id, kind, payload FROM pending_mutation ORDER BY id',
+    );
+    return rows.map((row) => ({ id: row.id, kind: row.kind, payload: JSON.parse(row.payload) as unknown }));
+  }
+
+  async removePending(id: number): Promise<void> {
+    await this.database.runAsync('DELETE FROM pending_mutation WHERE id = ?', [id]);
   }
 
   async pendingCount(): Promise<number> {
