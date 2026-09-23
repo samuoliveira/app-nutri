@@ -5,6 +5,7 @@ import { useTheme } from '@/core/designsystem/ThemeProvider';
 import {
   Card,
   Divider,
+  EmptyView,
   ErrorView,
   Icon,
   Screen,
@@ -28,9 +29,23 @@ export function PatientDetailScreen({ patientId }: PatientDetailScreenProps) {
   const model = usePatientModel(patientId);
   const aiEnabled = useFlag('ai_insights');
 
+  /**
+   * A rota não tem header da biblioteca, então o botão de voltar é desta tela.
+   * Ele precisa existir em todos os estados: sem isso, carregar, falhar ou vir
+   * vazio deixa o usuário preso sem saída.
+   */
+  const backBar = (
+    <View style={styles.topBar}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Voltar" onPress={coordinator.back} style={styles.iconButton}>
+        <Icon name="chevron-left" size={22} />
+      </Pressable>
+    </View>
+  );
+
   if (model.ui.kind === 'loading') {
     return (
       <Screen>
+        {backBar}
         <View style={styles.content}>
           <SkeletonList rows={5} />
         </View>
@@ -41,12 +56,20 @@ export function PatientDetailScreen({ patientId }: PatientDetailScreenProps) {
   if (model.ui.kind === 'error') {
     return (
       <Screen>
+        {backBar}
         <ErrorView error={model.ui.error} onRetry={model.refresh} />
       </Screen>
     );
   }
 
-  if (model.ui.kind === 'empty') return null;
+  if (model.ui.kind === 'empty') {
+    return (
+      <Screen>
+        {backBar}
+        <EmptyView title="Paciente indisponível" body="Não encontramos os dados deste paciente." />
+      </Screen>
+    );
+  }
 
   const { patient, indicators, weightSeries } = model.ui.data;
   const { status } = patient;
