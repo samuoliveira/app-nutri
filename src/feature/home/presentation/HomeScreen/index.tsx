@@ -13,6 +13,7 @@ export function HomeScreen() {
   const coordinator = useCoordinator();
   const model = useHomeModel();
   const setPatientFilter = useSessionStore((state) => state.setPatientFilter);
+  const professionalName = useSessionStore((state) => state.professionalName);
 
   if (model.ui.kind === 'loading') {
     return (
@@ -53,9 +54,9 @@ export function HomeScreen() {
             <Text token="footnote" tone="muted" weight="500">
               {data.dateLabel}
             </Text>
-            <Text token="title1">{data.greeting}, Samuel</Text>
+            <Text token="title1">{professionalName ? `${data.greeting}, ${professionalName}` : data.greeting}</Text>
           </View>
-          <Avatar name="Samuel Nutri" size={36} />
+          {professionalName ? <Avatar name={professionalName} size={36} /> : null}
         </View>
 
         <View style={styles.cardSlot}>

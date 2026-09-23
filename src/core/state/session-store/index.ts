@@ -9,8 +9,10 @@ export const useSessionStore = create<SessionState>((set) => ({
   patientSearch: '',
   biomarkerRange: '3M',
   unlocked: false,
+  professionalName: null,
   setPatientFilter: (patientFilter) => set({ patientFilter }),
   setPatientSearch: (patientSearch) => set({ patientSearch }),
   setBiomarkerRange: (biomarkerRange) => set({ biomarkerRange }),
   setUnlocked: (unlocked) => set({ unlocked }),
+  setProfessionalName: (professionalName) => set({ professionalName }),
 }));
