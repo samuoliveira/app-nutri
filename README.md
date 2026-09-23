@@ -97,8 +97,18 @@ mudança nativa continua exigindo release.
 ### Capacidade nativa
 
 Biometria (`expo-local-authentication`): trava no cold start e depois de 1 min
-em segundo plano, via `AppState`. Sem digital cadastrada cai no código do
-aparelho — nunca deixa o app inacessível.
+em segundo plano, via `AppState`. A decisão de abrir mora em
+`core/platform/unlock-policy` — função pura sobre uma porta `DeviceAuth`,
+testada sem renderizar tela:
+
+| aparelho | comportamento |
+|---|---|
+| biometria cadastrada | exige biometria (`disableDeviceFallback: true`); senha não vale |
+| só código de bloqueio | abre pelo código, com aviso |
+| **sem bloqueio nenhum** | abre com aviso de dados desprotegidos |
+
+O último caso é o que impede o app de ficar permanentemente inacessível num
+aparelho sem PIN — situação padrão de emulador recém-criado.
 
 ### Offline e update otimista
 
@@ -148,7 +158,7 @@ Para exercitar IA de verdade sem custo: pegue uma chave em
 ## Testes
 
 ```bash
-npm test && npm run typecheck        # app: 41 testes
+npm test && npm run typecheck        # app: 55 testes
 npm run check:arch                   # fronteiras entre camadas
 npm run check:code --all             # padrão de código
 npm run check:keys                   # chaves de query registradas
