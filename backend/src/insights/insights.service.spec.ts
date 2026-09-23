@@ -20,7 +20,7 @@ const PATIENT: PatientView = {
   lastVisitAt: '2026-09-01T12:00:00.000Z',
 };
 
-function build(overrides: { aiEnabled?: boolean; llm?: LlmClient } = {}) {
+function build(overrides: { aiEnabled?: boolean; llm?: LlmClient; known?: unknown } = {}) {
   const llm: LlmClient = overrides.llm ?? {
     generate: jest.fn().mockResolvedValue({ summary: 'resumo', recommendations: ['a'], source: 'llm' }),
   };
@@ -39,6 +39,7 @@ function build(overrides: { aiEnabled?: boolean; llm?: LlmClient } = {}) {
   const repository = {
     save: jest.fn().mockImplementation((insight) => Promise.resolve({ id: 'insight-1', ...insight })),
     latestFor: jest.fn().mockResolvedValue(null),
+    findByFingerprint: jest.fn().mockResolvedValue(overrides.known ?? null),
   } as unknown as InsightsRepository;
 
   return { service: new InsightsService(patients, flags, repository, llm), llm, patients, repository };
@@ -72,6 +73,31 @@ describe('InsightsService', () => {
       expect.objectContaining({ patientId: PATIENT.id, summary: 'resumo', source: 'llm' }),
     );
     expect(insight.id).toBe('insight-1');
+  });
+
+  it('não chama o provedor quando o mesmo quadro clínico já tem rascunho', async () => {
+    const { service, llm } = build({ known: { id: 'insight-antigo', summary: 'resumo anterior' } });
+
+    const insight = await service.create(PATIENT.id);
+
+    expect(insight.id).toBe('insight-antigo');
+    expect(llm.generate).not.toHaveBeenCalled();
+  });
+
+  it('guarda a impressão digital e os dados considerados', async () => {
+    const { service, repository } = build();
+
+    await service.create(PATIENT.id);
+
+    const saved = (repository.save as jest.Mock).mock.calls[0][0];
+    expect(saved.fingerprint).toContain('54:F');
+    expect(saved.considered).toEqual(
+      expect.arrayContaining([
+        { label: 'Idade', detail: '54 anos' },
+        { label: 'IMC', detail: '32' },
+        { label: 'Glicemia', detail: '140 mg/dL' },
+      ]),
+    );
   });
 
   it('propaga paciente inexistente como 404', async () => {

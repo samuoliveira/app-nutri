@@ -36,6 +36,7 @@ export interface InsightDto {
   readonly summary: string;
   readonly recommendations: ReadonlyArray<string>;
   readonly source: 'llm' | 'rules';
+  readonly considered?: ReadonlyArray<{ label: string; detail: string }>;
   readonly createdAt: string;
 }
 

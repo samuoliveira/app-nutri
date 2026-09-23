@@ -139,10 +139,8 @@ function toInsight(dto: InsightDto): Insight {
     status: 'rascunho',
     headline: dto.summary,
     body: dto.recommendations.join('\n\n'),
-    consideredData: dto.recommendations.map((recommendation, index) => ({
-      label: `Conduta ${index + 1}`,
-      detail: recommendation,
-    })),
+    /** Auditoria é o que a IA recebeu, não o que ela respondeu. */
+    consideredData: (dto.considered ?? []).map((item) => ({ label: item.label, detail: item.detail })),
     source: dto.source === 'llm' ? 'llm' : 'regras',
     createdAt: dto.createdAt,
   };

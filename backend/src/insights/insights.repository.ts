@@ -12,6 +12,10 @@ export class InsightsRepository {
     return this.insights.findOne({ where: { patientId }, order: { createdAt: 'DESC' } });
   }
 
+  findByFingerprint(patientId: string, fingerprint: string): Promise<Insight | null> {
+    return this.insights.findOne({ where: { patientId, fingerprint }, order: { createdAt: 'DESC' } });
+  }
+
   save(insight: Partial<Insight>): Promise<Insight> {
     return this.insights.save(this.insights.create(insight));
   }

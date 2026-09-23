@@ -70,8 +70,10 @@ export function InsightSheet({ patientId }: InsightSheetProps) {
               </Text>
               {state.ui.data.consideredData.map((item) => (
                 <View key={item.label} style={styles.dataRow}>
-                  <Text token="footnote">{item.label}</Text>
-                  <Text token="footnote" tone="muted">
+                  <Text token="footnote" style={styles.dataLabel}>
+                    {item.label}
+                  </Text>
+                  <Text token="footnote" tone="muted" style={styles.dataDetail}>
                     {item.detail}
                   </Text>
                 </View>
@@ -109,7 +111,10 @@ const styles = StyleSheet.create({
   label: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   headline: { marginTop: spacing.sm },
   section: { gap: spacing.xs, paddingTop: spacing.md },
-  dataRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 7 },
+  dataRow: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md, paddingVertical: 7 },
+  /** Sem flexShrink o valor longo vaza para fora do padding da tela. */
+  dataLabel: { flexShrink: 0 },
+  dataDetail: { flex: 1, textAlign: 'right' },
   footer: { gap: spacing.md, paddingTop: spacing.lg },
   disabled: { alignItems: 'center', gap: spacing.sm, paddingTop: 80 },
   centered: { textAlign: 'center' },

@@ -2,7 +2,7 @@ import { Inject, Injectable, ServiceUnavailableException } from '@nestjs/common'
 
 import { FlagsService } from '../flags/flags.service';
 import { PatientsService } from '../patients/patients.service';
-import { anonymizePatient } from './llm/anonymous-profile';
+import { anonymizePatient, consideredData, profileFingerprint } from './llm/anonymous-profile';
 import { LLM_CLIENT, type LlmClient } from './llm/llm.client';
 import type { Insight } from './insight.entity';
 import { InsightsRepository } from './insights.repository';
@@ -32,6 +32,15 @@ export class InsightsService {
     const patient = await this.patients.byId(patientId);
     const measurements = await this.patients.measurements(patientId);
     const profile = anonymizePatient(patient, measurements);
+    const fingerprint = profileFingerprint(profile);
+
+    /**
+     * Mesmo quadro clínico não gera chamada nova: devolve o rascunho anterior.
+     * Economiza cobrança e faz a segunda abertura ser instantânea.
+     */
+    const known = await this.repository.findByFingerprint(patientId, fingerprint);
+    if (known) return known;
+
     const result = await this.llm.generate(profile);
 
     return this.repository.save({
@@ -39,6 +48,8 @@ export class InsightsService {
       summary: result.summary,
       recommendations: result.recommendations,
       source: result.source,
+      fingerprint,
+      considered: consideredData(profile),
     });
   }
 }
