@@ -77,6 +77,15 @@ export const api = {
     );
   },
 
+  async approveInsight(patientId: string, insightId: string): Promise<Insight> {
+    return toInsight(
+      await httpRequest<InsightDto>({
+        method: 'PATCH',
+        path: `/patients/${patientId}/insights/${insightId}/approve`,
+      }),
+    );
+  },
+
   async latestInsight(patientId: string): Promise<Insight> {
     return toInsight(
       await httpRequest<InsightDto>({ method: 'GET', path: `/patients/${patientId}/insights/latest` }),
@@ -136,7 +145,7 @@ function toInsight(dto: InsightDto): Insight {
   return {
     id: dto.id,
     patientId: dto.patientId,
-    status: 'rascunho',
+    status: dto.status === 'approved' ? 'aprovado' : 'rascunho',
     headline: dto.summary,
     body: dto.recommendations.join('\n\n'),
     /** Auditoria é o que a IA recebeu, não o que ela respondeu. */

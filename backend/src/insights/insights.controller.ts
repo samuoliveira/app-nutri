@@ -1,4 +1,4 @@
-import { Controller, Get, HttpCode, HttpStatus, NotFoundException, Param, ParseUUIDPipe, Post } from '@nestjs/common';
+import { Controller, Get, HttpCode, HttpStatus, NotFoundException, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
 
 import type { Insight } from './insight.entity';
 import { InsightsService } from './insights.service';
@@ -13,6 +13,11 @@ export class InsightsController {
     if (!insight) throw new NotFoundException('Nenhum insight gerado para este paciente');
 
     return insight;
+  }
+
+  @Patch(':id/approve')
+  approve(@Param('id', ParseUUIDPipe) id: string): Promise<Insight> {
+    return this.service.approve(id);
   }
 
   @Post()

@@ -19,6 +19,13 @@ export class Insight {
   @Column({ type: 'varchar' })
   source!: 'llm' | 'rules';
 
+  /** Rascunho vira aprovado só por ação do nutricionista. */
+  @Column({ type: 'varchar', default: 'draft' })
+  status!: 'draft' | 'approved';
+
+  @Column({ name: 'approved_at', type: 'timestamptz', nullable: true })
+  approvedAt!: Date | null;
+
   /** Mesmo quadro clínico gera a mesma chave: evita repetir chamada e cobrança. */
   @Column({ type: 'varchar', default: '' })
   fingerprint!: string;

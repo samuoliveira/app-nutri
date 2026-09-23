@@ -14,7 +14,8 @@ export type IconName =
   | 'clock'
   | 'file'
   | 'lock'
-  | 'cloud-off';
+  | 'cloud-off'
+  | 'check';
 
 export interface IconProps {
   name: IconName;

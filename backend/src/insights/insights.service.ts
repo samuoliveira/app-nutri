@@ -1,4 +1,4 @@
-import { Inject, Injectable, ServiceUnavailableException } from '@nestjs/common';
+import { ConflictException, Inject, Injectable, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 
 import { FlagsService } from '../flags/flags.service';
 import { PatientsService } from '../patients/patients.service';
@@ -19,6 +19,21 @@ export class InsightsService {
     private readonly repository: InsightsRepository,
     @Inject(LLM_CLIENT) private readonly llm: LlmClient,
   ) {}
+
+  /**
+   * Aprovação é decisão clínica do nutricionista: fica registrada no servidor,
+   * com horário, e não pode ser desfeita por um segundo toque.
+   */
+  async approve(id: string): Promise<Insight> {
+    const insight = await this.repository.findById(id);
+    if (!insight) throw new NotFoundException(`Insight ${id} não encontrado`);
+    if (insight.status === 'approved') throw new ConflictException('Rascunho já aprovado');
+
+    const approved = await this.repository.approve(id, new Date());
+    if (!approved) throw new NotFoundException(`Insight ${id} não encontrado`);
+
+    return approved;
+  }
 
   latestFor(patientId: string): Promise<Insight | null> {
     return this.repository.latestFor(patientId);

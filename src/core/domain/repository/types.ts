@@ -46,6 +46,7 @@ export interface ScheduleRepository {
 export interface InsightRepository {
   latestFor(patientId: string): Promise<Result<Insight | null>>;
   create(patientId: string): Promise<Result<Insight>>;
+  approve(insightId: string): Promise<Result<Insight>>;
 }
 
 export interface FlagRepository {

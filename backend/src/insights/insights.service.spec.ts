@@ -1,4 +1,4 @@
-import { NotFoundException, ServiceUnavailableException } from '@nestjs/common';
+import { ConflictException, NotFoundException, ServiceUnavailableException } from '@nestjs/common';
 
 import type { FlagsService } from '../flags/flags.service';
 import type { PatientsService, PatientView } from '../patients/patients.service';
@@ -20,7 +20,7 @@ const PATIENT: PatientView = {
   lastVisitAt: '2026-09-01T12:00:00.000Z',
 };
 
-function build(overrides: { aiEnabled?: boolean; llm?: LlmClient; known?: unknown } = {}) {
+function build(overrides: { aiEnabled?: boolean; llm?: LlmClient; known?: unknown; stored?: unknown } = {}) {
   const llm: LlmClient = overrides.llm ?? {
     generate: jest.fn().mockResolvedValue({ summary: 'resumo', recommendations: ['a'], source: 'llm' }),
   };
@@ -40,6 +40,10 @@ function build(overrides: { aiEnabled?: boolean; llm?: LlmClient; known?: unknow
     save: jest.fn().mockImplementation((insight) => Promise.resolve({ id: 'insight-1', ...insight })),
     latestFor: jest.fn().mockResolvedValue(null),
     findByFingerprint: jest.fn().mockResolvedValue(overrides.known ?? null),
+    findById: jest.fn().mockResolvedValue(overrides.stored ?? null),
+    approve: jest.fn().mockImplementation((id: string, approvedAt: Date) =>
+      Promise.resolve({ id, status: 'approved', approvedAt }),
+    ),
   } as unknown as InsightsRepository;
 
   return { service: new InsightsService(patients, flags, repository, llm), llm, patients, repository };
@@ -98,6 +102,28 @@ describe('InsightsService', () => {
         { label: 'Glicemia', detail: '140 mg/dL' },
       ]),
     );
+  });
+
+  it('registra a aprovação com horário', async () => {
+    const { service, repository } = build({ stored: { id: 'insight-1', status: 'draft' } });
+
+    const approved = await service.approve('insight-1');
+
+    expect(approved.status).toBe('approved');
+    expect((repository.approve as jest.Mock).mock.calls[0][1]).toBeInstanceOf(Date);
+  });
+
+  it('recusa aprovar rascunho inexistente', async () => {
+    const { service } = build({ stored: null });
+
+    await expect(service.approve('sumiu')).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('recusa aprovar duas vezes', async () => {
+    const { service, repository } = build({ stored: { id: 'insight-1', status: 'approved' } });
+
+    await expect(service.approve('insight-1')).rejects.toBeInstanceOf(ConflictException);
+    expect(repository.approve).not.toHaveBeenCalled();
   });
 
   it('propaga paciente inexistente como 404', async () => {

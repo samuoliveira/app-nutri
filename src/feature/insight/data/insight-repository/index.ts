@@ -23,6 +23,32 @@ export class InsightRepositoryImpl implements InsightRepository {
     return ok(cached ?? null);
   }
 
+  /**
+   * Aprovação é decisão clínica: precisa ficar no servidor, não só na tela.
+   * Sem backend configurado, marca o rascunho em memória.
+   */
+  async approve(insightId: string): Promise<Result<Insight>> {
+    const cached = this.cache.get(insightId);
+
+    try {
+      if (isRemoteApiEnabled()) {
+        if (!cached) return fail(DomainError.notFound('Rascunho'));
+
+        const approved = await this.remote.approveInsight(cached.patientId, insightId);
+        this.cache.set(insightId, approved);
+        return ok(approved);
+      }
+
+      if (!cached) return fail(DomainError.notFound('Rascunho'));
+
+      const approved: Insight = { ...cached, status: 'aprovado' };
+      this.cache.set(insightId, approved);
+      return ok(approved);
+    } catch (cause) {
+      return fail(DomainError.from(cause));
+    }
+  }
+
   async create(patientId: string): Promise<Result<Insight>> {
     if (!isRemoteApiEnabled() && !readServerFlags().ai_insights) {
       return fail(DomainError.featureDisabled('ai_insights'));

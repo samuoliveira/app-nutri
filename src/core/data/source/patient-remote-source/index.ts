@@ -48,4 +48,8 @@ export class PatientRemoteSource {
   async createInsight(patientId: string): Promise<Insight> {
     return api.createInsight(patientId);
   }
+
+  async approveInsight(patientId: string, insightId: string): Promise<Insight> {
+    return api.approveInsight(patientId, insightId);
+  }
 }

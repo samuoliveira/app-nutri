@@ -45,6 +45,7 @@ export function Icon({ name, size = 20, color, strokeWidth = 1.8 }: IconProps) {
       )}
       {name === 'pin' && <Path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" {...common} />}
       {name === 'sparkle' && <Path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" {...common} />}
+      {name === 'check' && <Path d="M5 12.5l4.5 4.5L19 7.5" {...common} />}
       {name === 'close' && (
         <>
           <Line x1="17" y1="7" x2="7" y2="17" {...common} />

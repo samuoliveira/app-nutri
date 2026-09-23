@@ -42,6 +42,7 @@ Regra pura (classificação de status, IMC) vive fora das três camadas, em
 | `PATCH` | `/api/patients/:id/pin` | 200 · 404 |
 | `GET` | `/api/patients/:id/measurements` | 200 |
 | `POST` | `/api/patients/:id/insights` | 201 · 404 · 503 (flag desligada) |
+| `PATCH` | `/api/patients/:id/insights/:insightId/approve` | 200 · 404 · 409 (já aprovado) |
 | `GET` | `/api/patients/:id/insights/latest` | 200 · 404 |
 | `GET` | `/api/schedule/today?date=` | 200 — consultas do dia, em ordem |
 | `POST` | `/api/schedule` | 201 · 404 (paciente) · 409 (horário ocupado) |
@@ -70,7 +71,7 @@ flag ai_insights → anonymizePatient() → LlmClient → persistência
 ## Testes
 
 ```bash
-npm test          # 40 testes
+npm test          # 45 testes
 npm run test:cov
 ```
 

@@ -1,6 +1,7 @@
+import { DomainError } from '@/core/domain/domain-error';
 import type { Insight } from '@/core/domain/model';
 import type { InsightRepository } from '@/core/domain/repository';
-import { ok, type Result } from '@/core/domain/result';
+import { fail, ok, type Result } from '@/core/domain/result';
 import { RequestInsight } from './index';
 
 const insight: Insight = {
@@ -19,6 +20,10 @@ class FakeInsightRepository implements InsightRepository {
 
   async latestFor(): Promise<Result<Insight | null>> {
     return ok(null);
+  }
+
+  async approve(insightId: string): Promise<Result<Insight>> {
+    return fail(DomainError.notFound(insightId));
   }
 
   async create(): Promise<Result<Insight>> {

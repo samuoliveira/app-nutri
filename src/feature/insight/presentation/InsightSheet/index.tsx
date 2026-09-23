@@ -1,3 +1,4 @@
+import * as Haptics from 'expo-haptics';
 import { useEffect } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 
@@ -86,17 +87,39 @@ export function InsightSheet({ patientId }: InsightSheetProps) {
               <Text token="footnote" tone="muted" weight="500">
                 Próximo passo
               </Text>
-              <Text token="headline" weight="500">
-                {state.approved ? 'Rascunho aprovado' : 'Criar orientação personalizada'}
-              </Text>
+
+              {state.approved ? (
+                <View style={styles.approvedRow}>
+                  <Icon name="check" size={20} color={theme.palette.success} />
+                  <Text token="headline" weight="500">
+                    Rascunho aprovado
+                  </Text>
+                </View>
+              ) : (
+                <Text token="headline" weight="500">
+                  Criar orientação personalizada
+                </Text>
+              )}
+
               <Button
-                label={state.approved ? 'Aprovado' : 'Aprovar rascunho'}
-                onPress={viewModel.approve.bind(viewModel)}
-                disabled={state.approved}
+                label={state.approving ? 'Aprovando…' : state.approved ? 'Aprovado' : 'Aprovar rascunho'}
+                onPress={() => {
+                  void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  void viewModel.approve();
+                }}
+                disabled={state.approved || state.approving}
               />
+
+              {state.approveError ? (
+                <Text token="footnote" tone="danger">
+                  Não foi possível registrar a aprovação. {state.approveError.message}
+                </Text>
+              ) : null}
+
               <Text token="footnote" tone="subtle">
-                Gerado a partir de dados anonimizados ({state.ui.data.source === 'regras' ? 'regras clínicas' : 'IA'}).
-                O rascunho só chega à paciente depois da sua revisão.
+                {state.approved
+                  ? 'Aprovação registrada. A orientação pode ser enviada à paciente.'
+                  : `Gerado a partir de dados anonimizados (${state.ui.data.source === 'regras' ? 'regras clínicas' : 'IA'}). O rascunho só chega à paciente depois da sua revisão.`}
               </Text>
             </View>
           </>
@@ -116,6 +139,7 @@ const styles = StyleSheet.create({
   dataLabel: { flexShrink: 0 },
   dataDetail: { flex: 1, textAlign: 'right' },
   footer: { gap: spacing.md, paddingTop: spacing.lg },
+  approvedRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   disabled: { alignItems: 'center', gap: spacing.sm, paddingTop: 80 },
   centered: { textAlign: 'center' },
 });

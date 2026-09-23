@@ -160,12 +160,12 @@ Para exercitar IA de verdade sem custo: pegue uma chave em
 ## Testes
 
 ```bash
-npm test && npm run typecheck        # app: 55 testes
+npm test && npm run typecheck        # app: 68 testes
 npm run check:arch                   # fronteiras entre camadas
 npm run check:code --all             # padrão de código
 npm run check:keys                   # chaves de query registradas
 
-cd backend && npm test && npm run test:cov   # 40 testes, 94,8% dos services
+cd backend && npm test && npm run test:cov   # 45 testes, 94,8% dos services
 ```
 
 O teste de arquitetura lê o código-fonte e falha quando uma fronteira é
