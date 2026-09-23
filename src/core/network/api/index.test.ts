@@ -54,6 +54,7 @@ describe('camada de API', () => {
       pinned: true,
       createdAt: '2026-01-10T12:00:00.000Z',
       lastVisitAt: null,
+      status: 'atencao',
     });
   });
 

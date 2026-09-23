@@ -22,7 +22,6 @@ import type { PatientStatusFilter } from '@/core/domain/repository';
 import { useCoordinator } from '@/core/navigation/coordinator';
 import { useViewModel } from '@/core/presentation/use-view-model';
 import { useSessionStore } from '@/core/state/session-store';
-import { classifyPatientStatus } from '../../domain/classify-patient-status';
 import { countLabel } from '../patient-format';
 import { PatientListRow } from '../PatientListRow';
 import { PatientsViewModel } from '../PatientsViewModel';
@@ -126,7 +125,7 @@ export function PatientsScreen() {
             renderItem={({ item }) => (
               <PatientListRow
                 patient={item}
-                status={classifyPatientStatus(item, [])}
+                status={item.status}
                 onPress={openPatient}
                 onLongPress={pinPatient}
               />

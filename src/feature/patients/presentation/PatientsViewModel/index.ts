@@ -12,11 +12,17 @@ import type { PatientsListData, PatientsState } from './types';
 
 export type { PatientsListData, PatientsState } from './types';
 
+/** Espera o usuário parar de digitar antes de buscar. */
+export const SEARCH_DEBOUNCE_MS = 300;
+
 /** ViewModel puro: sem React, sem navegação. Testado sem renderizar tela. */
 export class PatientsViewModel extends ViewModel<PatientsState> {
   private readonly listPatients: ListPatients;
   private readonly togglePin: TogglePin;
   private cursor: string | null = null;
+  /** Só a resposta da requisição mais recente entra na tela. */
+  private latestRequest = 0;
+  private searchTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
     private readonly patients: PatientRepository,
@@ -29,6 +35,7 @@ export class PatientsViewModel extends ViewModel<PatientsState> {
   }
 
   async load(): Promise<void> {
+    this.cancelPendingSearch();
     this.cursor = null;
     this.setState({ ui: uiLoading() });
     await this.fetchPage(true);
@@ -51,7 +58,13 @@ export class PatientsViewModel extends ViewModel<PatientsState> {
 
   setSearch(search: string): void {
     this.setState({ search });
-    void this.load();
+    this.cancelPendingSearch();
+    this.searchTimer = setTimeout(() => void this.load(), SEARCH_DEBOUNCE_MS);
+  }
+
+  override dispose(): void {
+    this.cancelPendingSearch();
+    super.dispose();
   }
 
   /** Update otimista: a lista muda na hora e volta atrás se o servidor recusar. */
@@ -69,12 +82,20 @@ export class PatientsViewModel extends ViewModel<PatientsState> {
     await this.queryClient.invalidateQueries({ queryKey: queryKeys.patients.counts() });
   }
 
+  private cancelPendingSearch(): void {
+    if (this.searchTimer === null) return;
+    clearTimeout(this.searchTimer);
+    this.searchTimer = null;
+  }
+
   private async fetchPage(replace: boolean): Promise<void> {
+    const request = ++this.latestRequest;
     const { filter, search } = this.getSnapshot();
     const result = await this.listPatients.execute({
       query: { status: filter, search },
       cursor: replace ? null : this.cursor,
     });
+    if (request !== this.latestRequest) return;
 
     if (!result.ok) {
       this.setState({ ui: uiError(result.error) });

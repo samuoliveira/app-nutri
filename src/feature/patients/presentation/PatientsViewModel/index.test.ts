@@ -4,7 +4,7 @@ import { DomainError } from '@/core/domain/domain-error';
 import type { Patient } from '@/core/domain/model';
 import type { PatientPage, PatientQuery, PatientRepository } from '@/core/domain/repository';
 import { fail, ok, type Result } from '@/core/domain/result';
-import { PatientsViewModel } from './index';
+import { PatientsViewModel, SEARCH_DEBOUNCE_MS } from './index';
 
 function patient(overrides: Partial<Patient> = {}): Patient {
   return {
@@ -17,6 +17,7 @@ function patient(overrides: Partial<Patient> = {}): Patient {
     pinned: false,
     createdAt: '2024-01-01T00:00:00.000Z',
     lastVisitAt: '2026-09-10T00:00:00.000Z',
+    status: 'em_dia',
     ...overrides,
   };
 }
@@ -107,5 +108,50 @@ describe('PatientsViewModel', () => {
 
     const state = viewModel.getSnapshot();
     expect(state.ui.kind === 'data' && state.ui.data.items[0]?.pinned).toBe(true);
+  });
+
+  it('espera parar de digitar e busca uma vez só', async () => {
+    jest.useFakeTimers();
+    const repository = new FakePatientRepository([patient()]);
+    const list = jest.spyOn(repository, 'list');
+    const viewModel = new PatientsViewModel(repository, queryClient, { filter: 'all', search: '' });
+
+    viewModel.setSearch('A');
+    viewModel.setSearch('An');
+    viewModel.setSearch('Ana');
+    expect(list).not.toHaveBeenCalled();
+
+    jest.advanceTimersByTime(SEARCH_DEBOUNCE_MS);
+    jest.useRealTimers();
+
+    expect(list).toHaveBeenCalledTimes(1);
+    expect(list.mock.calls[0]?.[0].search).toBe('Ana');
+  });
+
+  it('resposta antiga que chega depois não sobrescreve a busca atual', async () => {
+    const ana = patient({ id: 'p-ana', name: 'Ana' });
+    const todos = patient({ id: 'p-todos', name: 'Todos' });
+    const releases: Array<() => void> = [];
+    const repository = new FakePatientRepository([]);
+    jest.spyOn(repository, 'list').mockImplementation(
+      (query) =>
+        new Promise((resolve) => {
+          const items = query.search === 'Ana' ? [ana] : [todos];
+          releases.push(() => resolve(ok({ items, total: items.length, nextCursor: null })));
+        }),
+    );
+    const viewModel = new PatientsViewModel(repository, queryClient, { filter: 'all', search: '' });
+
+    const first = viewModel.load();
+    viewModel.setSearch('Ana');
+    const second = viewModel.load();
+
+    releases[1]?.();
+    await second;
+    releases[0]?.();
+    await first;
+
+    const state = viewModel.getSnapshot();
+    expect(state.ui.kind === 'data' && state.ui.data.items.map((item) => item.id)).toEqual(['p-ana']);
   });
 });

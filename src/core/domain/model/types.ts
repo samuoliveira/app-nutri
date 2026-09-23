@@ -14,6 +14,8 @@ export interface Patient {
   readonly pinned: boolean;
   readonly createdAt: string;
   readonly lastVisitAt: string | null;
+  /** Calculado pelo backend, que enxerga todas as medições. O app não reclassifica. */
+  readonly status: PatientStatus;
 }
 
 export type MeasurementKind = 'glicemia' | 'pressao' | 'peso';

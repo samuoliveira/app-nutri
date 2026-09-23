@@ -95,6 +95,7 @@ function toPatient(dto: PatientDto): Patient {
     pinned: dto.pinned,
     createdAt: dto.createdAt,
     lastVisitAt: dto.lastVisitAt,
+    status: dto.status,
   };
 }
 

@@ -118,7 +118,7 @@ tipografia, nome comercial e nome do assistente. Trocar de marca em runtime
 
 | pergunta | arquivo |
 |---|---|
-| Quando um paciente é Novo / Atenção / Em dia | `feature/patients/domain/classify-patient-status` |
+| Quando um paciente é Novo / Atenção / Em dia | `backend/src/patients/patient-status.ts` — o app só exibe o `status` que o backend manda |
 | Faixa de glicemia, pressão e IMC | `feature/biomarkers/domain/clinical-bands` |
 | O que a IA recebe e o que ela nunca recebe | `feature/insight/domain/anonymize-patient` |
 | Kill switch da IA | `feature/insight/domain/request-insight` + `core/flags` |
@@ -132,6 +132,6 @@ tipografia, nome comercial e nome do assistente. Trocar de marca em runtime
 `src/architecture.test.ts` lê o código e falha quando uma fronteira é cruzada:
 domínio isolado, feature só pela porta pública, core sem depender de feature,
 `@react-navigation` confinado, marca fora do core e chave de query centralizada.
-Ao lado dele: `screen-options` (header), `clinical-bands` e
-`classify-patient-status` (regra clínica), `PatientsViewModel` (estados e update
-otimista), `anonymize-patient` e `request-insight` (IA).
+Ao lado dele: `screen-options` (header), `clinical-bands` (regra clínica),
+`patient-repository` (status do servidor e fila offline), `PatientsViewModel`
+(estados, update otimista e busca com debounce), `anonymize-patient` e `request-insight` (IA).

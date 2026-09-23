@@ -36,6 +36,15 @@ export const migrations: ReadonlyArray<{ version: number; statements: ReadonlyAr
       )`,
     ],
   },
+  {
+    version: 2,
+    statements: [
+      // Status passa a vir do backend. O cache antigo não tem o valor certo:
+      // é só cache, então esvazia e a próxima carga online preenche de novo.
+      `DELETE FROM patient`,
+      `ALTER TABLE patient ADD COLUMN status TEXT NOT NULL DEFAULT 'em_dia'`,
+    ],
+  },
 ];
 
 export const LATEST_SCHEMA_VERSION = migrations[migrations.length - 1]?.version ?? 0;

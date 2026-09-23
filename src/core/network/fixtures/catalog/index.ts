@@ -1,4 +1,4 @@
-import type { Appointment, Measurement, Patient, Sex } from '@/core/domain/model';
+import type { Appointment, Measurement, Patient, PatientStatus, Sex } from '@/core/domain/model';
 
 /**
  * Catálogo do "servidor": 2.000 pacientes gerados de forma determinística,
@@ -35,17 +35,47 @@ function buildPatient(index: number, nowMs: number): Patient {
   const hasVisited = createdDaysAgo > 25 || random > 0.7;
   const lastVisitDaysAgo = hasVisited ? Math.floor(pseudoRandom(index + 77) * 120) : null;
 
+  const id = `p-${index}`;
+  const createdAt = new Date(nowMs - createdDaysAgo * DAY_MS).toISOString();
+  const lastVisitAt = lastVisitDaysAgo === null ? null : new Date(nowMs - lastVisitDaysAgo * DAY_MS).toISOString();
+
   return {
-    id: `p-${index}`,
+    id,
     name: `${first} ${last}${suffix}`,
     ageYears: 20 + Math.floor(pseudoRandom(index + 13) * 50),
     sex,
     heightM: Number((1.55 + pseudoRandom(index + 31) * 0.3).toFixed(2)),
     weightKg: Number((52 + pseudoRandom(index + 51) * 50).toFixed(1)),
     pinned: index === 0,
-    createdAt: new Date(nowMs - createdDaysAgo * DAY_MS).toISOString(),
-    lastVisitAt: lastVisitDaysAgo === null ? null : new Date(nowMs - lastVisitDaysAgo * DAY_MS).toISOString(),
+    createdAt,
+    lastVisitAt,
+    status: serverStatus(createdAt, lastVisitAt, catalogMeasurements(id, nowMs), nowMs),
   };
+}
+
+/**
+ * O catálogo faz papel de servidor, então devolve o status pronto como o
+ * backend faz. Espelha backend/src/patients/patient-status.ts — o app não
+ * tem regra própria de status.
+ */
+function serverStatus(
+  createdAt: string,
+  lastVisitAt: string | null,
+  measurements: ReadonlyArray<Measurement>,
+  nowMs: number,
+): PatientStatus {
+  const daysSince = (iso: string) => Math.floor((nowMs - Date.parse(iso)) / DAY_MS);
+  if (daysSince(createdAt) <= 14) return 'novo';
+
+  const alerted = measurements.some(
+    (measurement) =>
+      (measurement.kind === 'glicemia' && measurement.value >= 126) ||
+      (measurement.kind === 'pressao' && measurement.value >= 140),
+  );
+  if (alerted) return 'atencao';
+
+  if (lastVisitAt === null || daysSince(lastVisitAt) > 45) return 'atencao';
+  return 'em_dia';
 }
 
 export function catalogPatients(nowMs: number = Date.now()): ReadonlyArray<Patient> {

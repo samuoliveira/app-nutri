@@ -1,11 +1,11 @@
-import type { Patient, PatientStatus } from '@/core/domain/model';
+import type { Patient } from '@/core/domain/model';
 import type { PatientQuery } from '@/core/domain/repository';
 
 /** Busca só começa a filtrar com 2 caracteres: antes disso a lista inteira é a resposta. */
 export const MIN_SEARCH_LENGTH = 2;
 
-export function matchesQuery(patient: Patient, query: PatientQuery, status: PatientStatus): boolean {
-  if (query.status !== 'all' && query.status !== status) return false;
+export function matchesQuery(patient: Patient, query: PatientQuery): boolean {
+  if (query.status !== 'all' && query.status !== patient.status) return false;
 
   const search = query.search.trim().toLowerCase();
   if (search.length < MIN_SEARCH_LENGTH) return true;

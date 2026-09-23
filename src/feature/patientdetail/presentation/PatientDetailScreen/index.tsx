@@ -16,7 +16,7 @@ import {
 import { spacing } from '@/core/designsystem/tokens';
 import { useFlag } from '@/core/flags/use-flag';
 import { useCoordinator } from '@/core/navigation/coordinator';
-import { classifyPatientStatus, statusLabel } from '@/feature/patients';
+import { statusLabel } from '@/feature/patients';
 import { IndicatorRow } from '../IndicatorRow';
 import { patientHeadline, weightDeltaLabel } from '../patient-detail-format';
 import { usePatientModel } from '../use-patient-model';
@@ -48,8 +48,8 @@ export function PatientDetailScreen({ patientId }: PatientDetailScreenProps) {
 
   if (model.ui.kind === 'empty') return null;
 
-  const { patient, indicators, weightSeries, measurements } = model.ui.data;
-  const status = classifyPatientStatus(patient, measurements);
+  const { patient, indicators, weightSeries } = model.ui.data;
+  const { status } = patient;
   const statusColor =
     status === 'atencao' ? theme.palette.danger : status === 'novo' ? theme.palette.info : theme.palette.success;
   const delta = weightDeltaLabel(weightSeries);

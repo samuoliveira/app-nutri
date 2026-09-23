@@ -8,5 +8,6 @@ export interface PatientRow {
   pinned: number;
   created_at: string;
   last_visit_at: string | null;
+  status: string;
 }
 

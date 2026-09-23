@@ -4,7 +4,6 @@ import type { PatientPage, PatientQuery, PatientRepository } from '@/core/domain
 import { fail, ok, type Result } from '@/core/domain/result';
 import type { PatientLocalSource } from '@/core/data/source/patient-local-source';
 import type { PatientRemoteSource } from '@/core/data/source/patient-remote-source';
-import { classifyPatientStatus } from '../../domain/classify-patient-status';
 import { matchesQuery } from '../../domain/filter-patients';
 
 const PAGE_SIZE = 40;
@@ -45,7 +44,12 @@ export class PatientRepositoryImpl implements PatientRepository {
     }
   }
 
-  /** Update otimista: o banco local muda na hora; o servidor confirma depois. */
+  /**
+   * Update otimista: o banco local muda na hora; o servidor confirma depois.
+   * Falha transitória (sem rede, timeout, 5xx) vai para a fila e a mudança
+   * fica. Recusa do servidor (404, 400) desfaz a mudança local e sobe o erro,
+   * para o ViewModel fazer rollback da tela.
+   */
   async setPinned(id: string, pinned: boolean): Promise<Result<Patient>> {
     try {
       await this.local.setPinned(id, pinned);
@@ -58,10 +62,15 @@ export class PatientRepositoryImpl implements PatientRepository {
       const patient = await this.local.byId(id);
       return patient ? ok(patient) : fail(DomainError.notFound('Paciente'));
     } catch (cause) {
+      const error = DomainError.from(cause);
+      if (!isTransient(error)) {
+        await this.local.setPinned(id, !pinned);
+        return fail(error);
+      }
+
       await this.local.enqueue('set-pinned', { id, pinned });
       const patient = await this.local.byId(id);
-      if (patient) return ok(patient);
-      return fail(DomainError.from(cause));
+      return patient ? ok(patient) : fail(error);
     }
   }
 
@@ -71,7 +80,7 @@ export class PatientRepositoryImpl implements PatientRepository {
 
     const counts = { em_dia: 0, atencao: 0, novo: 0 };
     for (const patient of patients) {
-      counts[classifyPatientStatus(patient, [])] += 1;
+      counts[patient.status] += 1;
     }
     return ok(counts);
   }
@@ -97,7 +106,7 @@ export class PatientRepositoryImpl implements PatientRepository {
     query: PatientQuery,
     cursor: string | null,
   ): PatientPage {
-    const filtered = patients.filter((patient) => matchesQuery(patient, query, classifyPatientStatus(patient, [])));
+    const filtered = patients.filter((patient) => matchesQuery(patient, query));
     const start = cursor ? Number(cursor) : 0;
     const items = filtered.slice(start, start + PAGE_SIZE);
     const nextIndex = start + items.length;
@@ -108,4 +117,11 @@ export class PatientRepositoryImpl implements PatientRepository {
       nextCursor: nextIndex < filtered.length ? String(nextIndex) : null,
     };
   }
+}
+
+const TRANSIENT_CODES: ReadonlyArray<DomainError['code']> = ['offline', 'timeout', 'network'];
+
+/** Só vale reenviar depois o que pode dar certo depois. */
+function isTransient(error: DomainError): boolean {
+  return TRANSIENT_CODES.includes(error.code);
 }

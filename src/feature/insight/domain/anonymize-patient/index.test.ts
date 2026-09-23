@@ -11,6 +11,7 @@ const patient: Patient = {
   pinned: false,
   createdAt: '2024-01-01T00:00:00.000Z',
   lastVisitAt: null,
+  status: 'novo',
 };
 
 const measurements: ReadonlyArray<Measurement> = [

@@ -1,5 +1,5 @@
 import type { Database } from '@/core/database/database';
-import type { Patient, Sex } from '@/core/domain/model';
+import type { Patient, PatientStatus, Sex } from '@/core/domain/model';
 
 import type { PatientRow } from './types';
 
@@ -16,6 +16,7 @@ export function rowToPatient(row: PatientRow): Patient {
     pinned: row.pinned === 1,
     createdAt: row.created_at,
     lastVisitAt: row.last_visit_at,
+    status: row.status as PatientStatus,
   };
 }
 
@@ -37,8 +38,8 @@ export class PatientLocalSource {
     await this.database.withTransactionAsync(async () => {
       for (const patient of patients) {
         await this.database.runAsync(
-          `INSERT INTO patient (id, name, age_years, sex, height_m, weight_kg, pinned, created_at, last_visit_at, cached_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `INSERT INTO patient (id, name, age_years, sex, height_m, weight_kg, pinned, created_at, last_visit_at, status, cached_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(id) DO UPDATE SET
              name = excluded.name,
              age_years = excluded.age_years,
@@ -47,6 +48,7 @@ export class PatientLocalSource {
              weight_kg = excluded.weight_kg,
              created_at = excluded.created_at,
              last_visit_at = excluded.last_visit_at,
+             status = excluded.status,
              cached_at = excluded.cached_at`,
           [
             patient.id,
@@ -58,6 +60,7 @@ export class PatientLocalSource {
             patient.pinned ? 1 : 0,
             patient.createdAt,
             patient.lastVisitAt,
+            patient.status,
             cachedAt,
           ],
         );
