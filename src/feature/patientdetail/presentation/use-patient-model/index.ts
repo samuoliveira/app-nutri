@@ -16,7 +16,8 @@ const HISTORY_DAYS = 30;
 export function usePatientModel(patientId: string): PatientDetailModel {
   const container = useContainer();
   const queryClient = useQueryClient();
-  const since = new Date(Date.now() - HISTORY_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  /** Fixa a janela na montagem: Date.now() em render muda a chave a cada frame. */
+  const since = useMemo(() => new Date(Date.now() - HISTORY_DAYS * 24 * 60 * 60 * 1000).toISOString(), []);
 
   const [patientQuery, measurementsQuery] = useQueries({
     queries: [

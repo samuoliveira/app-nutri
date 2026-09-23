@@ -201,14 +201,18 @@ rodou a anterior. Tabelas atuais: `patient`, `measurement` e `pending_mutation`
 
 ## 8. Rede
 
-Não há backend real no repositório: `src/core/network/transport/index.ts`
-simula um servidor com latência, jitter, taxa de falha, timeout e um modo
-offline forçado, configuráveis em `core/network/network-config` e ajustáveis
-pela tela Mais. Toda falha vira `DomainError` na origem, então as camadas de
-cima não lidam com exceção de rede.
+O backend real vive em [`backend/`](../backend/README.md) e é a fonte quando
+`EXPO_PUBLIC_API_URL` está configurada — ver a seção 14.
 
-Consequência de projeto: os caminhos de erro e offline são exercitáveis no
-simulador, sem derrubar nada.
+Ao lado dele existe um **catálogo simulado**, usado quando a variável está
+vazia: `src/core/network/transport/index.ts` simula latência, jitter, taxa de
+falha, timeout e um modo offline forçado, configuráveis em
+`core/network/network-config` e ajustáveis pela tela Mais.
+
+Isso não é substituto do backend: é o que torna os caminhos de erro e offline
+exercitáveis sob demanda, sem depender de derrubar container. As duas fontes
+convergem no mesmo contrato — toda falha vira `DomainError` na origem, então as
+camadas de cima nunca lidam com exceção de rede.
 
 ---
 

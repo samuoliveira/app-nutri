@@ -15,9 +15,11 @@ export type { HomeData, HomeModel } from './types';
  * Tela de leitura pura: quem guarda o dado do servidor é o TanStack Query,
  * e o modelo só monta o que a tela desenha.
  */
-export function useHomeModel(now: Date = new Date()): HomeModel {
+export function useHomeModel(reference?: Date): HomeModel {
   const container = useContainer();
   const queryClient = useQueryClient();
+  /** O relógio não pode rodar em render: fixa a referência na montagem. */
+  const now = useMemo(() => reference ?? new Date(), [reference]);
   const dayISO = now.toISOString();
 
   const [schedule, counts] = useQueries({

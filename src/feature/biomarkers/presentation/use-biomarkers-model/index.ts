@@ -18,7 +18,11 @@ export function useBiomarkersModel(patientId: string): BiomarkersModel {
   const queryClient = useQueryClient();
   const range = useSessionStore((state) => state.biomarkerRange);
   const setRange = useSessionStore((state) => state.setBiomarkerRange);
-  const since = new Date(Date.now() - RANGE_DAYS[range] * 24 * 60 * 60 * 1000).toISOString();
+  /** Date.now() em render deixa a query instável a cada frame: fixa por faixa. */
+  const since = useMemo(
+    () => new Date(Date.now() - RANGE_DAYS[range] * 24 * 60 * 60 * 1000).toISOString(),
+    [range],
+  );
 
   const [patientQuery, measurementsQuery] = useQueries({
     queries: [

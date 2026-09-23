@@ -24,9 +24,16 @@ export class InsightsService {
    * Aprovação é decisão clínica do nutricionista: fica registrada no servidor,
    * com horário, e não pode ser desfeita por um segundo toque.
    */
-  async approve(id: string): Promise<Insight> {
+  async approve(patientId: string, id: string): Promise<Insight> {
     const insight = await this.repository.findById(id);
     if (!insight) throw new NotFoundException(`Insight ${id} não encontrado`);
+
+    /**
+     * O rascunho tem que pertencer ao paciente da rota. Sem esta checagem,
+     * qualquer id de paciente aprova o insight de qualquer outro.
+     */
+    if (insight.patientId !== patientId) throw new NotFoundException(`Insight ${id} não encontrado`);
+
     if (insight.status === 'approved') throw new ConflictException('Rascunho já aprovado');
 
     const approved = await this.repository.approve(id, new Date());

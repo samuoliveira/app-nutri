@@ -1,5 +1,5 @@
 import { BlurView } from 'expo-blur';
-import { Platform, StyleSheet, View, type ViewStyle } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 
 import { useTheme } from '../../ThemeProvider';
 import type { GlassSurfaceProps } from './types';

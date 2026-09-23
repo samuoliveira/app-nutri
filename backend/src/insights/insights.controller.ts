@@ -16,8 +16,11 @@ export class InsightsController {
   }
 
   @Patch(':id/approve')
-  approve(@Param('id', ParseUUIDPipe) id: string): Promise<Insight> {
-    return this.service.approve(id);
+  approve(
+    @Param('patientId', ParseUUIDPipe) patientId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<Insight> {
+    return this.service.approve(patientId, id);
   }
 
   @Post()

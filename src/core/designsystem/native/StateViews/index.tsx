@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Animated, StyleSheet, View } from 'react-native';
 
 import { useTheme } from '../../ThemeProvider';
@@ -11,7 +11,8 @@ import type { EmptyViewProps, ErrorViewProps, SkeletonListProps, SkeletonRowProp
 /** Skeleton: mesma silhueta da lista real, sem "Carregando…" solto na tela. */
 export function SkeletonRow({ height = 66 }: SkeletonRowProps) {
   const theme = useTheme();
-  const pulse = useRef(new Animated.Value(0.5)).current;
+  /** useMemo em vez de useRef().current: ref lida em render quebra o React Compiler. */
+  const pulse = useMemo(() => new Animated.Value(0.5), []);
 
   useEffect(() => {
     const animation = Animated.loop(

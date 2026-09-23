@@ -6,6 +6,8 @@ jest.mock('expo-haptics', () => ({
   ImpactFeedbackStyle: { Light: 'light', Medium: 'medium' },
 }));
 
-jest.mock('@react-native-async-storage/async-storage', () =>
-  require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
+jest.mock(
+  '@react-native-async-storage/async-storage',
+  // eslint-disable-next-line @typescript-eslint/no-require-imports -- jest.mock exige factory síncrona
+  () => require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 );

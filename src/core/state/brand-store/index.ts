@@ -1,11 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 
-import { brandIds, type BrandId, DEFAULT_BRAND_ID } from '@/core/designsystem/brands';
+import { brandIds, DEFAULT_BRAND_ID } from '@/core/designsystem/brands';
+import type { BrandState } from './types';
 
 const STORAGE_KEY = 'tecsa.brand.v1';
-
-import type { BrandState } from './types';
 
 export type { BrandState } from './types';
 

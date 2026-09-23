@@ -105,9 +105,9 @@ describe('InsightsService', () => {
   });
 
   it('registra a aprovação com horário', async () => {
-    const { service, repository } = build({ stored: { id: 'insight-1', status: 'draft' } });
+    const { service, repository } = build({ stored: { id: 'insight-1', patientId: PATIENT.id, status: 'draft' } });
 
-    const approved = await service.approve('insight-1');
+    const approved = await service.approve(PATIENT.id, 'insight-1');
 
     expect(approved.status).toBe('approved');
     expect((repository.approve as jest.Mock).mock.calls[0][1]).toBeInstanceOf(Date);
@@ -116,13 +116,20 @@ describe('InsightsService', () => {
   it('recusa aprovar rascunho inexistente', async () => {
     const { service } = build({ stored: null });
 
-    await expect(service.approve('sumiu')).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.approve(PATIENT.id, 'sumiu')).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it('recusa aprovar duas vezes', async () => {
-    const { service, repository } = build({ stored: { id: 'insight-1', status: 'approved' } });
+    const { service, repository } = build({ stored: { id: 'insight-1', patientId: PATIENT.id, status: 'approved' } });
 
-    await expect(service.approve('insight-1')).rejects.toBeInstanceOf(ConflictException);
+    await expect(service.approve(PATIENT.id, 'insight-1')).rejects.toBeInstanceOf(ConflictException);
+    expect(repository.approve).not.toHaveBeenCalled();
+  });
+
+  it('não aprova rascunho de outro paciente', async () => {
+    const { service, repository } = build({ stored: { id: 'insight-1', patientId: 'outro-paciente', status: 'draft' } });
+
+    await expect(service.approve(PATIENT.id, 'insight-1')).rejects.toBeInstanceOf(NotFoundException);
     expect(repository.approve).not.toHaveBeenCalled();
   });
 
