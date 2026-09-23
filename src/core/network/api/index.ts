@@ -6,6 +6,8 @@ export type { AppointmentDto, InsightDto, MeasurementDto, PatientDto, PatientPag
 
 const PAGE_SIZE = 100;
 const MAX_PAGES = 30;
+/** O provedor de LLM pode levar dezenas de segundos; o padrão de 8s abortaria. */
+const INSIGHT_TIMEOUT_MS = 60_000;
 
 /**
  * Camada de API tipada: fala HTTP de um lado e devolve modelo de domínio do
@@ -67,7 +69,11 @@ export const api = {
 
   async createInsight(patientId: string): Promise<Insight> {
     return toInsight(
-      await httpRequest<InsightDto>({ method: 'POST', path: `/patients/${patientId}/insights` }),
+      await httpRequest<InsightDto>({
+        method: 'POST',
+        path: `/patients/${patientId}/insights`,
+        timeoutMs: INSIGHT_TIMEOUT_MS,
+      }),
     );
   },
 

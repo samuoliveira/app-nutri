@@ -35,7 +35,7 @@ import { RuleBasedLlm } from './llm/rule-based.llm';
 
         const geminiKey = process.env.GEMINI_API_KEY;
         if (geminiKey) {
-          return new GeminiLlm(fallback, geminiKey, process.env.GEMINI_MODEL ?? 'gemini-2.5-flash');
+          return new GeminiLlm(fallback, geminiKey, process.env.GEMINI_MODEL ?? 'gemini-3.6-flash');
         }
 
         return fallback;
