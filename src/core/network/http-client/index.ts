@@ -8,10 +8,11 @@ export type { HttpMethod, HttpRequest } from './types';
  * Único ponto de saída HTTP do app. Traduz status e falha de rede em
  * DomainError, então nenhuma camada acima lida com Response nem com exceção crua.
  */
-export async function httpRequest<T>({ method, path, body }: HttpRequest): Promise<T> {
-  const { baseUrl, timeoutMs } = getApiConfig();
+export async function httpRequest<T>({ method, path, body, timeoutMs }: HttpRequest): Promise<T> {
+  const config = getApiConfig();
+  const baseUrl = config.baseUrl;
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs ?? config.timeoutMs);
 
   try {
     // fetch-ok: este é o transporte; quem chama passa por core/network/api

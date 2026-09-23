@@ -1,9 +1,10 @@
 import * as LocalAuthentication from 'expo-local-authentication';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, StyleSheet, View, type AppStateStatus } from 'react-native';
+import { ActivityIndicator, AppState, StyleSheet, View, type AppStateStatus } from 'react-native';
 
 import { Button, Icon, Screen, Text } from '@/core/designsystem/native';
 import { spacing } from '@/core/designsystem/tokens';
+import { runUnlock, type DeviceAuth, type UnlockOutcome } from '@/core/platform/unlock-policy';
 import { useSessionStore } from '@/core/state/session-store';
 import type { BiometricGateProps } from './types';
 
@@ -12,33 +13,29 @@ export type { BiometricGateProps } from './types';
 /** Trava depois de 1 minuto em segundo plano. */
 export const BACKGROUND_LOCK_MS = 60_000;
 
+/** Adaptador do módulo nativo para a porta que o policy declara. */
+const deviceAuth: DeviceAuth = {
+  hasHardware: () => LocalAuthentication.hasHardwareAsync(),
+  isEnrolled: () => LocalAuthentication.isEnrolledAsync(),
+  authenticate: async (options) => {
+    const result = await LocalAuthentication.authenticateAsync(options);
+    return { success: result.success, error: 'error' in result ? result.error : undefined };
+  },
+};
+
 export function BiometricGate({ children, enabled }: BiometricGateProps) {
   const unlocked = useSessionStore((state) => state.unlocked);
   const setUnlocked = useSessionStore((state) => state.setUnlocked);
-  const [message, setMessage] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
+  const [outcome, setOutcome] = useState<UnlockOutcome | null>(null);
   const backgroundedAt = useRef<number | null>(null);
 
   const authenticate = useCallback(async () => {
-    const hasHardware = await LocalAuthentication.hasHardwareAsync();
-    const enrolled = await LocalAuthentication.isEnrolledAsync();
-
-    if (!hasHardware || !enrolled) {
-      /** Sem biometria cadastrada o app não fica inacessível: cai no código do aparelho. */
-      const fallback = await LocalAuthentication.authenticateAsync({
-        promptMessage: 'Desbloquear',
-        disableDeviceFallback: false,
-      });
-      setUnlocked(fallback.success);
-      setMessage(fallback.success ? null : 'Não foi possível desbloquear');
-      return;
-    }
-
-    const result = await LocalAuthentication.authenticateAsync({
-      promptMessage: 'Desbloquear dados dos pacientes',
-      disableDeviceFallback: false,
-    });
-    setUnlocked(result.success);
-    setMessage(result.success ? null : 'Não foi possível desbloquear');
+    setChecking(true);
+    const result = await runUnlock(deviceAuth);
+    setOutcome(result);
+    setUnlocked(result.status === 'unlocked');
+    setChecking(false);
   }, [setUnlocked]);
 
   useEffect(() => {
@@ -67,6 +64,17 @@ export function BiometricGate({ children, enabled }: BiometricGateProps) {
 
   if (!enabled || unlocked) return <>{children}</>;
 
+  /** Enquanto o SO responde, a tela de trava não aparece: evita piscar na abertura. */
+  if (checking || outcome === null) {
+    return (
+      <Screen>
+        <View style={styles.root}>
+          <ActivityIndicator />
+        </View>
+      </Screen>
+    );
+  }
+
   return (
     <Screen>
       <View style={styles.root}>
@@ -75,9 +83,9 @@ export function BiometricGate({ children, enabled }: BiometricGateProps) {
         <Text token="subhead" tone="muted" style={styles.body}>
           Use a biometria do aparelho para abrir a carteira de pacientes.
         </Text>
-        {message ? (
+        {outcome.status === 'locked' ? (
           <Text token="footnote" tone="danger">
-            {message}
+            {outcome.message}
           </Text>
         ) : null}
         <Button label="Desbloquear" onPress={() => void authenticate()} style={styles.action} />
