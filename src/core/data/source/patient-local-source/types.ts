@@ -11,6 +11,15 @@ export interface PatientRow {
   status: string;
 }
 
+export interface MeasurementRow {
+  id: string;
+  patient_id: string;
+  kind: string;
+  taken_at: string;
+  value: number;
+  secondary_value: number | null;
+}
+
 export interface PendingMutation {
   readonly id: number;
   readonly kind: string;

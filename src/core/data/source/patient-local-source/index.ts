@@ -1,9 +1,9 @@
 import type { Database } from '@/core/database/database';
-import type { Patient, PatientStatus, Sex } from '@/core/domain/model';
+import type { Measurement, MeasurementKind, Patient, PatientStatus, Sex } from '@/core/domain/model';
 
-import type { PatientRow, PendingMutation } from './types';
+import type { MeasurementRow, PatientRow, PendingMutation } from './types';
 
-export type { PatientRow, PendingMutation } from './types';
+export type { MeasurementRow, PatientRow, PendingMutation } from './types';
 
 export function rowToPatient(row: PatientRow): Patient {
   return {
@@ -20,6 +20,17 @@ export function rowToPatient(row: PatientRow): Patient {
   };
 }
 
+export function rowToMeasurement(row: MeasurementRow): Measurement {
+  return {
+    id: row.id,
+    patientId: row.patient_id,
+    kind: row.kind as MeasurementKind,
+    takenAt: row.taken_at,
+    value: row.value,
+    secondaryValue: row.secondary_value,
+  };
+}
+
 /** Carteira salva no aparelho: é o que a tela mostra quando a rede falha. */
 export class PatientLocalSource {
   /** Fila de gravação: withTransactionAsync não é exclusivo, e dois saves juntos abririam BEGIN dentro de BEGIN. */
@@ -31,6 +42,46 @@ export class PatientLocalSource {
     const write = this.pendingWrite.then(() => this.write(patients));
     this.pendingWrite = write.catch(() => undefined);
     return write;
+  }
+
+  /** Medições da ficha aberta: é o que faz a ficha abrir offline, sem spinner. */
+  saveMeasurements(measurements: ReadonlyArray<Measurement>): Promise<void> {
+    const write = this.pendingWrite.then(() => this.writeMeasurements(measurements));
+    this.pendingWrite = write.catch(() => undefined);
+    return write;
+  }
+
+  async measurementsOf(patientId: string): Promise<ReadonlyArray<Measurement>> {
+    const rows = await this.database.getAllAsync<MeasurementRow>(
+      'SELECT * FROM measurement WHERE patient_id = ? ORDER BY taken_at DESC',
+      [patientId],
+    );
+
+    return rows.map(rowToMeasurement);
+  }
+
+  private async writeMeasurements(measurements: ReadonlyArray<Measurement>): Promise<void> {
+    await this.database.withTransactionAsync(async () => {
+      for (const measurement of measurements) {
+        await this.database.runAsync(
+          `INSERT INTO measurement (id, patient_id, kind, taken_at, value, secondary_value)
+           VALUES (?, ?, ?, ?, ?, ?)
+           ON CONFLICT(id) DO UPDATE SET
+             kind = excluded.kind,
+             taken_at = excluded.taken_at,
+             value = excluded.value,
+             secondary_value = excluded.secondary_value`,
+          [
+            measurement.id,
+            measurement.patientId,
+            measurement.kind,
+            measurement.takenAt,
+            measurement.value,
+            measurement.secondaryValue,
+          ],
+        );
+      }
+    });
   }
 
   private async write(patients: ReadonlyArray<Patient>): Promise<void> {

@@ -112,7 +112,9 @@ aparelho sem PIN — situação padrão de emulador recém-criado.
 
 ### Offline e update otimista
 
-Carteira em SQLite + cache do Query persistido por 7 dias. Fixar paciente
+Carteira **e medições das fichas abertas** em SQLite, mais o cache do Query
+persistido por 7 dias. Abrir uma ficha já visitada sem rede mostra os dados
+salvos em vez de erro. Fixar paciente
 escreve no banco local na hora; se o servidor recusar (4xx), o banco local e o
 ViewModel voltam ao estado anterior; se a rede cair (offline, timeout, 5xx), a
 mutação vai para `pending_mutation`. A fila é reenviada em ordem ao abrir o

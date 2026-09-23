@@ -25,7 +25,7 @@ export function createContainer(database: Database): Container {
   return {
     database,
     patients: new PatientRepositoryImpl(remote, local),
-    measurements: new MeasurementRepositoryImpl(remote),
+    measurements: new MeasurementRepositoryImpl(remote, local),
     schedule: new ScheduleRepositoryImpl(remote),
     insights: new InsightRepositoryImpl(remote),
     flags: new FlagRepositoryImpl(remote),
