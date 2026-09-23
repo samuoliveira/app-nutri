@@ -1,5 +1,6 @@
 import { DomainError } from '@/core/domain/domain-error';
 import { setApiConfig } from '@/core/network/api-config';
+import { resetNetworkConfig, setNetworkConfig } from '@/core/network/network-config';
 import { api } from './index';
 
 const originalFetch = global.fetch;
@@ -119,5 +120,28 @@ describe('agenda', () => {
     expect(appointments.map((appointment) => appointment.kind)).toEqual(['retorno', 'primeira']);
     expect(appointments[0]).toMatchObject({ patientName: 'Maria Souza', startsAt: '2026-09-22T11:00:00.000Z' });
     expect(String(fetchMock.mock.calls[0][0])).toContain('/schedule/today?date=');
+  });
+});
+
+describe('offline', () => {
+  beforeEach(() => setApiConfig({ baseUrl: 'http://localhost:9000/api', timeoutMs: 1000 }));
+  afterEach(() => resetNetworkConfig());
+
+  it('não sai para a rede quando o offline está ligado', async () => {
+    const fetchMock = mockFetch(200, {});
+    setNetworkConfig({ forcedOffline: true });
+
+    await expect(api.flags()).rejects.toMatchObject({ code: 'offline' });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('volta a chamar a rede quando o offline é desligado', async () => {
+    const fetchMock = mockFetch(200, { ai_insights: true });
+    setNetworkConfig({ forcedOffline: true });
+    await expect(api.flags()).rejects.toMatchObject({ code: 'offline' });
+
+    setNetworkConfig({ forcedOffline: false });
+    await expect(api.flags()).resolves.toEqual({ ai_insights: true });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });

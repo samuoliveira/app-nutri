@@ -1,5 +1,6 @@
 import { DomainError } from '@/core/domain/domain-error';
 import { getApiConfig } from '../api-config';
+import { getNetworkConfig } from '../network-config';
 import type { HttpRequest } from './types';
 
 export type { HttpMethod, HttpRequest } from './types';
@@ -9,6 +10,13 @@ export type { HttpMethod, HttpRequest } from './types';
  * DomainError, então nenhuma camada acima lida com Response nem com exceção crua.
  */
 export async function httpRequest<T>({ method, path, body, timeoutMs }: HttpRequest): Promise<T> {
+  /**
+   * Offline vale para as duas fontes: o modo simulado da tela Mais e a queda
+   * real de rede (useConnectivity escreve no mesmo lugar). Sem isto, o toggle
+   * só afetaria o catálogo simulado.
+   */
+  if (getNetworkConfig().forcedOffline) throw DomainError.offline();
+
   const config = getApiConfig();
   const baseUrl = config.baseUrl;
   const controller = new AbortController();
