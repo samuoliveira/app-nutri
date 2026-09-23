@@ -14,7 +14,8 @@
     "updates": {
       "enabled": true,
       "checkAutomatically": "ON_LOAD",
-      "fallbackToCacheTimeout": 3000
+      "fallbackToCacheTimeout": 3000,
+      "url": "https://u.expo.dev/7c406efb-978e-4c0e-8fb0-84aa9860732f"
     },
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -50,6 +51,12 @@
     ],
     "experiments": {
       "typedRoutes": false
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "7c406efb-978e-4c0e-8fb0-84aa9860732f"
+      }
+    },
+    "owner": "samu03"
   }
 }
